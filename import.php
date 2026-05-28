@@ -74,4 +74,4 @@ $totalKata = $totalStmt->fetch()['total'];
     </div>
 </div>
 </body>
-</html
+</html>
