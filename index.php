@@ -548,6 +548,58 @@ try {
             cursor: not-allowed;
         }
         
+        /* Partner Section */
+        .partner-section {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+        .partner-title {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .partner-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(128, 128, 128, 0.08);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 400px;
+            transition: transform 0.3s, background 0.3s;
+        }
+        .partner-card:hover {
+            transform: translateY(-3px);
+            background: rgba(128, 128, 128, 0.12);
+        }
+        .partner-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #fff;
+            padding: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .partner-info h4 {
+            margin: 0;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .partner-info p {
+            margin: 2px 0 0 0;
+            font-size: 1em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
         /* Footer */
         .footer {
             margin-top: 40px;
@@ -914,6 +966,18 @@ try {
         <p>Coba kata kunci lain atau pilih huruf di atas</p>
     </div>
     <?php endif; ?>
+
+    <!-- Partner Section -->
+    <div class="partner-section">
+        <h3 class="partner-title">Mitra Kerjasama</h3>
+        <div class="partner-card">
+            <img src="smp21.png" alt="SMP Negeri 21 Banjarmasin" class="partner-logo">
+            <div class="partner-info">
+                <h4>Mitra</h4>
+                <p>SMP Negeri 21 Banjarmasin</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <div class="footer">
