@@ -136,7 +136,6 @@ try {
             border: 1px solid var(--border);
         }
         
-        /* Header */
         .header {
             display: flex;
             justify-content: space-between;
@@ -204,7 +203,6 @@ try {
             box-shadow: var(--shadow);
         }
         
-        /* Stats Cards */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -250,7 +248,6 @@ try {
             font-weight: 500;
         }
         
-        /* Word of the Day */
         .word-of-day {
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             padding: 28px;
@@ -313,7 +310,6 @@ try {
             color: #fbbf24;
         }
         
-        /* Search */
         .search-container {
             margin-bottom: 30px;
         }
@@ -367,7 +363,6 @@ try {
             box-shadow: var(--shadow-lg);
         }
         
-        /* Alphabet Navigation */
         .abjad-nav { 
             display: flex; 
             flex-wrap: wrap; 
@@ -409,7 +404,6 @@ try {
             box-shadow: var(--shadow);
         }
         
-        /* Results Info */
         .results-info {
             background: rgba(99, 102, 241, 0.05);
             padding: 14px 18px;
@@ -421,7 +415,6 @@ try {
             font-size: 0.95em;
         }
         
-        /* Table */
         .table-container {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
@@ -477,7 +470,6 @@ try {
             line-height: 1.6;
         }
         
-        /* Action Buttons */
         .aksi { 
             display: flex; 
             gap: 8px;
@@ -513,7 +505,6 @@ try {
             box-shadow: var(--shadow);
         }
         
-        /* Pagination */
         .pagination {
             display: flex;
             justify-content: center;
@@ -548,7 +539,6 @@ try {
             cursor: not-allowed;
         }
         
-        /* Partner Section */
         .partner-section {
             margin-top: 50px;
             padding-top: 30px;
@@ -600,7 +590,6 @@ try {
             color: var(--text-primary);
         }
         
-        /* Footer */
         .footer {
             margin-top: 40px;
             padding-top: 30px;
@@ -635,7 +624,6 @@ try {
             transform: translateY(-2px);
         }
         
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -732,7 +720,6 @@ try {
             min-height: 100px;
         }
         
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 30px;
@@ -761,7 +748,6 @@ try {
             }
         }
         
-        /* Empty State */
         .empty {
             text-align: center;
             padding: 60px 20px;
@@ -782,7 +768,6 @@ try {
             opacity: 0.5;
         }
         
-        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 24px;
@@ -833,7 +818,6 @@ try {
 </head>
 <body>
 <div class="container">
-    <!-- Header -->
     <div class="header">
         <div class="logo-section">
             <div class="logo-icon">🗣️</div>
@@ -847,7 +831,6 @@ try {
         </button>
     </div>
 
-    <!-- Stats -->
     <div class="stats-bar">
         <div class="stat-card">
             <h3><?= number_format($totalKata) ?></h3>
@@ -863,7 +846,6 @@ try {
         </div>
     </div>
 
-    <!-- Word of the Day -->
     <?php if ($randomWord): ?>
     <div class="word-of-day">
         <h2><i class="fas fa-dice"></i> Kata Hari Ini</h2>
@@ -872,7 +854,6 @@ try {
     </div>
     <?php endif; ?>
 
-    <!-- Search -->
     <div class="search-container">
         <form class="search-box" method="GET" action="">
             <input type="text" name="q" placeholder="Cari kata Banjar atau artinya..." 
@@ -884,7 +865,6 @@ try {
         </form>
     </div>
 
-    <!-- A-Z Navigation -->
     <div class="abjad-nav">
         <a href="?" class="<?= $abjad=='' && $keyword=='' ? 'active' : '' ?>">
             <span>Semua</span>
@@ -905,7 +885,6 @@ try {
         </span>
     </div>
 
-    <!-- Results Table -->
     <?php if(count($results) > 0): ?>
     <div class="table-container">
         <table>
@@ -935,7 +914,6 @@ try {
         </table>
     </div>
 
-    <!-- Pagination -->
     <?php if($totalPages > 1): ?>
     <div class="pagination">
         <?php if($page>1): ?>
@@ -967,7 +945,6 @@ try {
     </div>
     <?php endif; ?>
 
-    <!-- Partner Section -->
     <div class="partner-section">
         <h3 class="partner-title">Mitra Kerjasama</h3>
         <div class="partner-card">
@@ -979,7 +956,6 @@ try {
         </div>
     </div>
 
-    <!-- Footer -->
     <div class="footer">
         <p>&copy; <?= date('Y') ?> <strong>UjarBanjar</strong> | Dibuat dengan <i class="fas fa-heart" style="color: #ef4444;"></i> untuk pelestarian bahasa daerah</p>
         <div class="footer-links">
@@ -995,7 +971,6 @@ try {
     </div>
 </div>
 
-<!-- Modal Saran -->
 <div id="saranModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -1025,7 +1000,6 @@ try {
     </div>
 </div>
 
-<!-- Toast Notification -->
 <div class="toast" id="toast">
     <i class="fas fa-check-circle"></i>
     <span id="toastMessage">Berhasil disalin!</span>
@@ -1049,22 +1023,53 @@ try {
     
     if(localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark');
-        document.querySelector('.theme-toggle i').classList.remove('fa-moon');
-        document.querySelector('.theme-toggle i').classList.add('fa-sun');
+        const icon = document.querySelector('.theme-toggle i');
+        if (icon) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        }
     }
 
-    // Audio
+    // Audio TTS - Simple & Reliable (menggunakan addslashes)
     function speak(text) {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'id-ID'; 
-        window.speechSynthesis.speak(u);
+        if (!('speechSynthesis' in window)) {
+            console.warn('Browser tidak mendukung Web Speech API');
+            return;
+        }
+
+        // Stop suara sebelumnya agar tidak tumpang tindih
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Setting bahasa Indonesia
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.9;  // Sedikit lebih lambat agar jelas
+        utterance.pitch = 1;
+
+        // Coba pilih voice Indonesian jika tersedia (untuk Chrome/Edge)
+        const voices = window.speechSynthesis.getVoices();
+        const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+        
+        if (idVoice) {
+            utterance.voice = idVoice;
+        }
+
+        // Speak!
+        window.speechSynthesis.speak(utterance);
     }
 
-    // Copy
+    // Load voices di background (penting untuk Chrome)
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+    }
+
+    // Copy function
     function copyText(t) {
         navigator.clipboard.writeText(t).then(() => {
             showToast('✅ Berhasil disalin!');
         }).catch(() => {
+            // Fallback untuk browser lama
             const textarea = document.createElement('textarea');
             textarea.value = t;
             document.body.appendChild(textarea);
@@ -1075,7 +1080,7 @@ try {
         });
     }
 
-    // Toast
+    // Toast notification
     function showToast(message) {
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toastMessage');
@@ -1086,7 +1091,7 @@ try {
         }, 3000);
     }
 
-    // Modal
+    // Modal functions
     function openModal() {
         document.getElementById('saranModal').style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -1115,11 +1120,13 @@ try {
         }
     });
 
-    // Auto-focus
+    // Auto-focus search
     window.addEventListener('load', function() {
         const searchInput = document.getElementById('searchInput');
-        if (!searchInput.value && !<?= $abjad ? 'true' : 'false' ?>) {
-            searchInput.focus();
+        if (searchInput && !searchInput.value) {
+            setTimeout(() => {
+                searchInput.focus();
+            }, 500);
         }
     });
 </script>
