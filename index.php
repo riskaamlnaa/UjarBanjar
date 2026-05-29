@@ -68,6 +68,15 @@ try {
 } catch (PDOException $e) {
     $randomWord = null;
 }
+
+// 🎓 DATASET UNTUK NLP (Cosine Similarity)
+$nlp_dataset = [];
+try {
+    $nlpStmt = $pdo->query("SELECT kata_banjar FROM kamus_banjar LIMIT 500");
+    $nlp_dataset = array_column($nlpStmt->fetchAll(), 'kata_banjar');
+} catch (PDOException $e) {
+    $nlp_dataset = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -767,6 +776,36 @@ try {
             margin-bottom: 16px;
             opacity: 0.5;
         }
+
+        /* 🎓 NLP Feature Styles */
+        .nlp-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: var(--radius-lg);
+            border-left: 4px solid var(--primary);
+            animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .nlp-title { margin: 0 0 15px 0; color: var(--text-primary); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .nlp-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+        .nlp-chip {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nlp-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--primary); background: var(--primary); color: white; }
+        .nlp-chip .score { font-size: 0.8em; opacity: 0.7; margin-left: 4px; }
+        .nlp-chip:hover .score { color: rgba(255,255,255,0.9); }
         
         @media (max-width: 768px) {
             .container {
@@ -913,6 +952,16 @@ try {
             </tbody>
         </table>
     </div>
+
+    <!-- 🎓 NLP FEATURE: Related Words -->
+    <?php if (!empty($keyword) && count($results) > 0): ?>
+    <div class="nlp-section">
+        <h4 class="nlp-title"><i class="fas fa-brain"></i> Rekomendasi Kata Terkait (NLP)</h4>
+        <div id="relatedWords" class="nlp-chips">
+            <span style="color: var(--text-light); font-style: italic;">Memproses algoritma...</span>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <?php if($totalPages > 1): ?>
     <div class="pagination">
@@ -1127,6 +1176,66 @@ try {
             setTimeout(() => {
                 searchInput.focus();
             }, 500);
+        }
+    });
+
+    // 🎓 NLP: Cosine Similarity dengan Character Bigrams
+    const NLP = {
+        getNGrams: function(text, n = 2) {
+            const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const ngrams = [];
+            for (let i = 0; i <= clean.length - n; i++) {
+                ngrams.push(clean.substring(i, i + n));
+            }
+            return ngrams;
+        },
+        cosineSimilarity: function(a, b) {
+            const freqA = {}, freqB = {};
+            a.forEach(w => freqA[w] = (freqA[w] || 0) + 1);
+            b.forEach(w => freqB[w] = (freqB[w] || 0) + 1);
+            const allWords = new Set([...Object.keys(freqA), ...Object.keys(freqB)]);
+            let dotProduct = 0, normA = 0, normB = 0;
+            for (const word of allWords) {
+                const valA = freqA[word] || 0;
+                const valB = freqB[word] || 0;
+                dotProduct += valA * valB;
+                normA += valA * valA;
+                normB += valB * valB;
+            }
+            if (normA === 0 || normB === 0) return 0;
+            return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+        },
+        findRelated: function(query, allWords, limit = 5) {
+            const queryNGrams = this.getNGrams(query);
+            const scored = [];
+            for (const word of allWords) {
+                if (word.toLowerCase() === query.toLowerCase()) continue;
+                const wordNGrams = this.getNGrams(word);
+                const score = this.cosineSimilarity(queryNGrams, wordNGrams);
+                if (score > 0.2) scored.push({ word, score });
+            }
+            scored.sort((a, b) => b.score - a.score);
+            return scored.slice(0, limit);
+        }
+    };
+
+    // 🎓 Jalankan NLP saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+        const keyword = '<?= addslashes($keyword) ?>';
+        const dataset = <?= json_encode($nlp_dataset) ?>;
+        
+        if (keyword && keyword.trim() !== '' && dataset.length > 0) {
+            const related = NLP.findRelated(keyword, dataset, 6);
+            const container = document.getElementById('relatedWords');
+            if (related.length > 0) {
+                container.innerHTML = related.map(item => 
+                    `<a href="?q=${encodeURIComponent(item.word)}" class="nlp-chip">
+                        ${item.word} <span class="score">${Math.round(item.score * 100)}%</span>
+                    </a>`
+                ).join('');
+            } else {
+                container.innerHTML = '<span style="color: var(--text-light);">Tidak ada kata terkait ditemukan.</span>';
+            }
         }
     });
 </script>
