@@ -32,22 +32,61 @@ if (isset($_GET['q']) && !empty($_GET['q'])) {
     }
 }
 
-// Get data untuk Word Cloud
+// ========================================
+// STATISTIK PENGUNJUNG (REAL COUNT)
+// ========================================
+session_start();
+
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS stats_pengunjung (
+            id INT PRIMARY KEY DEFAULT 1,
+            jumlah_kunjungan INT DEFAULT 0,
+            terakhir_diakses TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+    
+    $checkStmt = $pdo->query("SELECT COUNT(*) FROM stats_pengunjung");
+    if ($checkStmt->fetchColumn() == 0) {
+        $pdo->exec("INSERT INTO stats_pengunjung (id, jumlah_kunjungan) VALUES (1, 0)");
+    }
+    
+    if (!isset($_SESSION['visited'])) {
+        $pdo->exec("UPDATE stats_pengunjung SET jumlah_kunjungan = jumlah_kunjungan + 1 WHERE id = 1");
+        $_SESSION['visited'] = true;
+    }
+    
+    $statStmt = $pdo->query("SELECT jumlah_kunjungan FROM stats_pengunjung WHERE id = 1");
+    $visits = $statStmt->fetch()['jumlah_kunjungan'];
+} catch (PDOException $e) {
+    $visits = 0;
+}
+
+// ========================================
+// GET DATA FOR WORD CLOUD
+// ========================================
 $wordCloudData = [];
 
 try {
-    // 1. Ambil dari statistik pencarian (prioritas utama)
-    $searchStmt = $pdo->query("
-        SELECT kata_kunci as kata, jumlah_cari as freq 
-        FROM search_stats 
-        WHERE jumlah_cari > 0
-        ORDER BY jumlah_cari DESC 
-        LIMIT 50
-    ");
-    $searchData = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
+    // Cek apakah ada parameter refresh di URL
+    $forceRandom = isset($_GET['refresh_wc']) ? true : false;
     
-    // 2. Jika belum ada data pencarian, ambil kata-kata umum dari kamus
-    if (empty($searchData)) {
+    // 1. Ambil dari statistik pencarian (prioritas utama) - hanya jika tidak ada force refresh
+    if (!$forceRandom) {
+        $searchStmt = $pdo->query("
+            SELECT kata_kunci as kata, jumlah_cari as freq 
+            FROM search_stats 
+            WHERE jumlah_cari > 0
+            ORDER BY jumlah_cari DESC 
+            LIMIT 50
+        ");
+        $searchData = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $searchData = [];
+    }
+    
+    // 2. Jika belum ada data pencarian ATAU dipaksa refresh, ambil kata-kata acak dari kamus
+    if (empty($searchData) || $forceRandom) {
         $commonWordsStmt = $pdo->query("
             SELECT kata_banjar as kata, 
                    CASE 
@@ -56,7 +95,7 @@ try {
                        ELSE 8
                    END as freq
             FROM kamus_banjar 
-            ORDER BY RAND()
+            ORDER BY RAND() 
             LIMIT 50
         ");
         $wordCloudData = $commonWordsStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -64,7 +103,6 @@ try {
         $wordCloudData = $searchData;
     }
 } catch (PDOException $e) {
-    // Fallback: kata-kata umum Bahasa Banjar
     $wordCloudData = [
         ['kata' => 'banyu', 'freq' => 15],
         ['kata' => 'rumah', 'freq' => 14],
@@ -77,43 +115,6 @@ try {
         ['kata' => 'handak', 'freq' => 8],
         ['kata' => 'banyu', 'freq' => 8],
     ];
-}
-
-// ========================================
-// STATISTIK PENGUNJUNG (REAL COUNT)
-// ========================================
-session_start(); // Mulai session untuk tracking unik
-
-try {
-    // Buat tabel stats_pengunjung jika belum ada
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS stats_pengunjung (
-            id INT PRIMARY KEY DEFAULT 1,
-            jumlah_kunjungan INT DEFAULT 0,
-            terakhir_diakses TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    ");
-    
-    // Inisialisasi dengan 0 jika tabel kosong
-    $checkStmt = $pdo->query("SELECT COUNT(*) FROM stats_pengunjung");
-    if ($checkStmt->fetchColumn() == 0) {
-        $pdo->exec("INSERT INTO stats_pengunjung (id, jumlah_kunjungan) VALUES (1, 0)");
-    }
-    
-    // Hitung pengunjung unik per session (bukan per page load)
-    if (!isset($_SESSION['visited'])) {
-        // Ini adalah pengunjung baru dalam session ini
-        $pdo->exec("UPDATE stats_pengunjung SET jumlah_kunjungan = jumlah_kunjungan + 1 WHERE id = 1");
-        $_SESSION['visited'] = true; // Tandai bahwa user ini sudah dihitung
-    }
-    
-    // Ambil jumlah pengunjung saat ini
-    $statStmt = $pdo->query("SELECT jumlah_kunjungan FROM stats_pengunjung WHERE id = 1");
-    $visits = $statStmt->fetch()['jumlah_kunjungan'];
-    
-} catch (PDOException $e) {
-    $visits = 0;
-    error_log("Error counting visitors: " . $e->getMessage());
 }
 
 // Parameter
@@ -1220,14 +1221,16 @@ try {
 
     <?php else: ?>
     <div class="empty">
-        <div class="empty-icon">😕</div>
+        <div class="empty-icon"></div>
         <h3>Tidak ada data ditemukan</h3>
         <p>Coba kata kunci lain atau pilih huruf di atas</p>
     </div>
     <?php endif; ?>
 
     <div class="partner-section">
-        <h3 class="partner-title">Mitra Kerjasama</h3>
+    <h3 class="partner-title">Mitra Kerjasama</h3>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <!-- Mitra 1: SMP Negeri 21 Banjarmasin -->
         <div class="partner-card">
             <img src="smp21.png" alt="SMP Negeri 21 Banjarmasin" class="partner-logo">
             <div class="partner-info">
@@ -1235,11 +1238,26 @@ try {
                 <p>SMP Negeri 21 Banjarmasin</p>
             </div>
         </div>
+        
+        <!-- Mitra 2: SMA PGRI 7 Banjarmasin -->
+        <div class="partner-card">
+            <img src="pgri 7.png" alt="SMA PGRI 7 Banjarmasin" class="partner-logo">
+            <div class="partner-info">
+                <h4>Mitra</h4>
+                <p>SMA PGRI 7 Banjarmasin</p>
+            </div>
+        </div>
     </div>
+</div>
 
-    <!-- Word Cloud Section - ENHANCED VERSION -->
+    <!-- Word Cloud Section - ENHANCED VERSION WITH REFRESH -->
     <div class="wordcloud-section">
-        <h2><i class="fas fa-cloud"></i> Kata Paling Sering Dicari</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin-bottom: 0;"><i class="fas fa-cloud"></i> Kata Paling Sering Dicari</h2>
+            <a href="?refresh_wc=1" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--primary); color: white; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </a>
+        </div>
         
         <?php if (!empty($wordCloudData)): ?>
         <div class="wordcloud-container" id="wordcloud">
@@ -1276,7 +1294,7 @@ try {
             <?php endforeach; ?>
         </div>
         <p class="wordcloud-info">
-            <i class="fas fa-info-circle"></i> Klik kata untuk mencari • Berdasarkan statistik pencarian pengguna
+            <i class="fas fa-info-circle"></i> Klik kata untuk mencari • Klik tombol Refresh untuk mengacak kata
         </p>
         <?php else: ?>
         <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
